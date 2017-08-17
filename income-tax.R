@@ -34,6 +34,14 @@ additional_rate_threshold <- 150000
 # you are taxed at the Additional Rate:
 additional_rate <- 0.45 
 
+# Personal allowance progressive withdrawl
+
+# Your personal allowance goes down by one pound for
+# every n pounds that your gross income is over the
+# limit:
+personal_allowance_withdrawl_unit <- 2
+personal_allowance_withdrawl_limit <- 100000
+
 
 # NATIONAL INSURANCE #
 
@@ -106,12 +114,21 @@ national_insurance <- function(gross) {
   national_insurance_basic(gross) + national_insurance_higher(gross)
 }
 
+
+allowance_withdrawl <- function(gross) {
+ withdrawn_allowance <- max(0, min(personal_allowance, (gross - personal_allowance_withdrawl_limit) / personal_allowance_withdrawl_unit))
+ remaining_allowance <- personal_allowance - withdrawn_allowance
+ tax_function(gross, remaining_allowance) - tax_function(gross, personal_allowance) 
+}
+
+
 fr <- function(incomes) {
   data.frame(incomes,  
                         sapply(incomes, basic_tax_pa),
                         sapply(incomes, higher_tax_pa),
                         sapply(incomes, additional_tax_pa),
-                        sapply(incomes, national_insurance)
+                        sapply(incomes, national_insurance),
+                        sapply(incomes, allowance_withdrawl)
                        )
 }
 
