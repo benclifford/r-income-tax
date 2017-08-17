@@ -6,7 +6,7 @@ library(reshape2)
 # this should be an array of gross incomes over which we
 # want to plot our data
 
-few_incomes <- c(100,10000, 15000, 45000, 46000, 60000, 149000, 152000, 200000)
+few_incomes <- c(100,10000, 15000, 44999,45001, 46000, 60000, 149000, 152000, 200000)
 
 gross_incomes <- seq(1,200000, by=50)
 
@@ -22,13 +22,13 @@ personal_allowance <- 11500
 # after which you're taxed at the Basic Rate:
 basic_rate <- 0.2
 
-# until you earn this much gross:
-higher_rate_threshold <- 45000
+# basic rate tax band is up to this much (after allowances):
+higher_rate_threshold <- 33500
 
 # at which point you are taxed at the Higher Rate:
 higher_rate <- 0.4
 
-# and then when you reach this much gross:
+# and then when you reach this much (after allowances):
 additional_rate_threshold <- 150000
 
 # you are taxed at the Additional Rate:
@@ -58,23 +58,35 @@ upper_rate <- 0.02
 
 # End of government parameters #
 
-basic_tax <- function(gross) { 
-  max(0, (gross - personal_allowance) * 0.2)
+basic_tax <- function(adj) { 
+  max(0, adj * 0.2)
 }
 
-higher_tax <- function(gross) {
-  max(0, (gross - higher_rate_threshold) * (higher_rate - basic_rate))
+higher_tax <- function(adj) {
+  max(0, (adj - higher_rate_threshold) * (higher_rate - basic_rate))
 }
 
-additional_tax <- function(gross) {
-  max(0, (gross - additional_rate_threshold) * (additional_rate - higher_rate))
+additional_tax <- function(adj) {
+  max(0, (adj - additional_rate_threshold) * (additional_rate - higher_rate))
 }
 
-tax_function <- function(gross) {
-  basic_tax(gross) + higher_tax(gross) + additional_tax(gross)
+basic_tax_pa <- function(gross) {
+  basic_tax(gross - personal_allowance)
 }
 
-taxes_for_incomes <- sapply(gross_incomes, tax_function)
+higher_tax_pa <- function(gross) {
+  higher_tax(gross - personal_allowance)
+}
+
+additional_tax_pa <- function(gross) {
+  additional_tax(gross - personal_allowance)
+}
+
+tax_function <- function(gross, allowance) {
+  post_allowance <- gross - allowance
+  basic_tax(post_allowance) + higher_tax(post_allowance) + additional_tax(post_allowance)
+}
+
 
 # this doesn't work so well as a cumulation of rates, because the basic
 # rate is 12%, and then higher than that is effectively a -10% on top
@@ -96,9 +108,9 @@ national_insurance <- function(gross) {
 
 fr <- function(incomes) {
   data.frame(incomes,  
-                        sapply(incomes, basic_tax),
-                        sapply(incomes, higher_tax),
-                        sapply(incomes, additional_tax),
+                        sapply(incomes, basic_tax_pa),
+                        sapply(incomes, higher_tax_pa),
+                        sapply(incomes, additional_tax_pa),
                         sapply(incomes, national_insurance)
                        )
 }
