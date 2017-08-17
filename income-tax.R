@@ -1,5 +1,7 @@
-
 # source this file with source('income-tax.R')
+
+library(ggplot2)
+library(reshape2)
 
 # this should be an array of gross incomes over which we
 # want to plot our data
@@ -57,5 +59,6 @@ fr <- function(incomes) {
 tax_frame <- fr(gross_incomes)
 few_tax_frame <- fr(few_incomes)
 
-plot(gross_incomes, taxes_for_incomes)
+ggplot(melt(tax_frame, id.vars="incomes"),
+       aes(x=incomes, y=value, fill=variable)) + geom_area()
 
