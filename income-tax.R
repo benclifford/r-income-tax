@@ -143,11 +143,11 @@ fr <- function(incomes) {
                         sapply(incomes, basic_tax_pa),
                         sapply(incomes, higher_tax_pa),
                         sapply(incomes, additional_tax_pa),
-                        sapply(incomes, national_insurance),
                         sapply(incomes, allowance_withdrawl),
+                        sapply(incomes, national_insurance),
                         sapply(incomes, student_loan)
                        )
-  colnames(x) <- c('income', "Basic","Higher","Additional","NI","Allowance withdrawal", "Student loan")
+  colnames(x) <- c('income', "Basic","Higher","Additional","Allowance withdrawal", "National Insurance", "Student loan")
   x
 }
 
@@ -172,6 +172,7 @@ marginal_tax_matrix_normalised <- marginal_tax_matrix / marginal_tax_matrix[,1]
 
 marginal_tax_matrix_normalised[,1] <- tax_matrix[-1,1]
 
-ggplot(melt(as.data.frame(marginal_tax_matrix_normalised), id.vars='income'), aes(x=income, y=value, fill=variable)) + geom_area() + scale_y_continuous(labels = scales::percent) + ylab("Marginal tax rate")
+ggplot(melt(as.data.frame(marginal_tax_matrix_normalised), id.vars='income'), aes(x=income, y=value, fill=variable)) + geom_area() + scale_y_continuous(labels = scales::percent) + ylab("Marginal tax rate")  + scale_fill_manual(values=c("#FF0000","#FF5555","#FFAAAA", "#FFFF00", "#FF00FF", "#00FFFF"))
+
 
 
