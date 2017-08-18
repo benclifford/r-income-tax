@@ -6,7 +6,10 @@ library(reshape2)
 # this should be an array of gross incomes over which we
 # want to plot our data
 
-few_incomes <- c(100,10000, 15000, 44999,45001, 46000, 60000, 149000, 152000, 200000)
+# few_incomes is a replacement for gross_incomes which can be
+# used for quick experimentations - graphs plot much faster with
+# this much smaller dataset.
+few_incomes <- c(100,10000, 15000, 15100, 44999,45001, 46000, 60000, 149000, 152000, 200000)
 
 gross_incomes <- seq(1,200000, by=50)
 
@@ -137,6 +140,24 @@ fr <- function(incomes) {
 tax_frame <- fr(gross_incomes)
 few_tax_frame <- fr(few_incomes)
 
+# produces a stacked plot of how each much tax comes from each
+# component in total
 ggplot(melt(tax_frame, id.vars='income'),
        aes(x=income, y=value, fill=variable)) + geom_area()
+
+# i would like each row to be replaced with the difference
+# with the previous row, in tax_frame (except column 1, incomes)
+# and then normalised by the difference in column 1.
+
+tax_matrix <- as.matrix(tax_frame)
+marginal_tax_matrix <- tax_matrix[-1,] - tax_matrix[-(dim(tax_matrix)[1]),]
+
+marginal_tax_matrix_normalised <- marginal_tax_matrix / marginal_tax_matrix[,1]
+
+# put the original incomes back in:
+
+marginal_tax_matrix_normalised[,1] <- tax_matrix[-1,1]
+
+ggplot(melt(as.data.frame(marginal_tax_matrix_normalised), id.vars='income'), aes(x=income, y=value, fill=variable)) + geom_area() + scale_y_continuous(labels = scales::percent)
+
 
