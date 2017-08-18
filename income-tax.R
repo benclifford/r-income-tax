@@ -175,4 +175,8 @@ marginal_tax_matrix_normalised[,1] <- tax_matrix[-1,1]
 ggplot(melt(as.data.frame(marginal_tax_matrix_normalised), id.vars='income'), aes(x=income, y=value, fill=variable)) + geom_area() + scale_y_continuous(labels = scales::percent) + ylab("Marginal tax rate")  + scale_fill_manual(values=c("#FF0000","#FF5555","#FFAAAA", "#FFFF00", "#FF00FF", "#00FFFF"))
 
 
+total_tax <- rowSums(tax_frame[-1])
+total_tax_fraction_of_income <- data.frame(tax_frame[1], total_tax / tax_frame[1])
+
+ggplot(melt(total_tax_fraction_of_income, id.vars='income'), aes(x=income, y=value)) + geom_area() + scale_y_continuous(labels = scales::percent) + ylab("Percentage of income taken as tax")
 
