@@ -123,18 +123,20 @@ allowance_withdrawl <- function(gross) {
 
 
 fr <- function(incomes) {
-  data.frame(incomes,  
+  x <- data.frame(incomes,
                         sapply(incomes, basic_tax_pa),
                         sapply(incomes, higher_tax_pa),
                         sapply(incomes, additional_tax_pa),
                         sapply(incomes, national_insurance),
                         sapply(incomes, allowance_withdrawl)
                        )
+  colnames(x) <- c('income', "Basic","Higher","Additional","NI","Allowance withdrawal")
+  x
 }
 
 tax_frame <- fr(gross_incomes)
 few_tax_frame <- fr(few_incomes)
 
-ggplot(melt(tax_frame, id.vars="incomes"),
-       aes(x=incomes, y=value, fill=variable)) + geom_area()
+ggplot(melt(tax_frame, id.vars='income'),
+       aes(x=income, y=value, fill=variable)) + geom_area()
 
