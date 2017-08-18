@@ -80,7 +80,7 @@ student_loan_rate = 0.09
 # End of government parameters #
 
 basic_tax <- function(adj) { 
-  max(0, adj * 0.2)
+  max(0, adj * basic_rate)
 }
 
 higher_tax <- function(adj) {
