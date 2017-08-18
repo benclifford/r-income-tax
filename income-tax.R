@@ -15,35 +15,37 @@ gross_incomes <- seq(1,200000, by=50)
 
 # parameters defined by government:
 
+realparam = list()
+
 # INCOME TAX #
 
 # all of these sterling amounts are per annum.
 
 # you get this much tax free:
-personal_allowance <- 11500
+realparam$personal_allowance <- 11500
 
 # after which you're taxed at the Basic Rate:
-basic_rate <- 0.2
+realparam$basic_rate <- 0.2
 
 # basic rate tax band is up to this much (after allowances):
-higher_rate_threshold <- 33500
+realparam$higher_rate_threshold <- 33500
 
 # at which point you are taxed at the Higher Rate:
-higher_rate <- 0.4
+realparam$higher_rate <- 0.4
 
 # and then when you reach this much (after allowances):
-additional_rate_threshold <- 150000
+realparam$additional_rate_threshold <- 150000
 
 # you are taxed at the Additional Rate:
-additional_rate <- 0.45 
+realparam$additional_rate <- 0.45 
 
 # Personal allowance progressive withdrawl
 
 # Your personal allowance goes down by one pound for
 # every n pounds that your gross income is over the
 # limit:
-personal_allowance_withdrawl_unit <- 2
-personal_allowance_withdrawl_limit <- 100000
+realparam$personal_allowance_withdrawl_unit <- 2
+realparam$personal_allowance_withdrawl_limit <- 100000
 
 
 # NATIONAL INSURANCE #
@@ -53,130 +55,200 @@ personal_allowance_withdrawl_limit <- 100000
 # so all of these sterling amounts are per calendar month
 
 # the primary threshold is:
-primary_threshold <- 680
+realparam$primary_threshold <- 680
 
 # above the primary threshold
 # to the upper earnings limit
 # you pay:
-primary_rate <- 0.12
+realparam$primary_rate <- 0.12
 
 # the upper earnings limit is:
-upper_earnings_limit <- 3750
+realparam$upper_earnings_limit <- 3750
 
 # above the upper earnings limit
 # you pay:
-upper_rate <- 0.02
+realparam$upper_rate <- 0.02
 
 
 # STUDENT LOAN #
 
 # if your income is above (per annum)
-student_loan_threshold = 21000
+realparam$student_loan_threshold = 21000
 
 # then you will repay this much of your
 # income over that:
-student_loan_rate = 0.09
+realparam$student_loan_rate = 0.09
 
 # End of government parameters #
 
-basic_tax <- function(adj) { 
-  max(0, adj * basic_rate)
+basic_tax <- function(adj, param) { 
+  max(0, adj * param$basic_rate)
 }
 
-higher_tax <- function(adj) {
-  max(0, (adj - higher_rate_threshold) * (higher_rate - basic_rate))
+higher_tax <- function(adj, param) {
+  max(0, (adj - param$higher_rate_threshold) * (param$higher_rate - param$basic_rate))
 }
 
-additional_tax <- function(adj) {
-  max(0, (adj - additional_rate_threshold) * (additional_rate - higher_rate))
+additional_tax <- function(adj, param) {
+  max(0, (adj - param$additional_rate_threshold) * (param$additional_rate - param$higher_rate))
 }
 
-basic_tax_pa <- function(gross) {
-  basic_tax(gross - personal_allowance)
+basic_tax_pa <- function(gross, param) {
+  basic_tax(gross - param$personal_allowance, param)
 }
 
-higher_tax_pa <- function(gross) {
-  higher_tax(gross - personal_allowance)
+higher_tax_pa <- function(gross, param) {
+  higher_tax(gross - param$personal_allowance, param)
 }
 
-additional_tax_pa <- function(gross) {
-  additional_tax(gross - personal_allowance)
+additional_tax_pa <- function(gross, param) {
+  additional_tax(gross - param$personal_allowance, param)
 }
 
-tax_function <- function(gross, allowance) {
+tax_function <- function(gross, allowance, param) {
   post_allowance <- gross - allowance
-  basic_tax(post_allowance) + higher_tax(post_allowance) + additional_tax(post_allowance)
+  basic_tax(post_allowance, param) + higher_tax(post_allowance, param) + additional_tax(post_allowance, param)
 }
 
 
 # this doesn't work so well as a cumulation of rates, because the basic
 # rate is 12%, and then higher than that is effectively a -10% on top
 # of that. So will compute it as a single value, rather than tiers.
-national_insurance_basic <- function(gross) {
-  max(0, (gross - (primary_threshold * 12)) * primary_rate)
+national_insurance_basic <- function(gross, param) {
+  max(0, (gross - (param$primary_threshold * 12)) * param$primary_rate)
 }
 
 # this one looks a bit different to the others because it *can* give
 # a negative contribution. max is moved to a different position, that
 # might also work in the others?
-national_insurance_higher <- function(gross) {
-  max(0,(gross - (upper_earnings_limit * 12))) * (upper_rate - primary_rate)
+national_insurance_higher <- function(gross, param) {
+  max(0,(gross - (param$upper_earnings_limit * 12))) * (param$upper_rate - param$primary_rate)
 }
 
-national_insurance <- function(gross) {
-  national_insurance_basic(gross) + national_insurance_higher(gross)
+national_insurance <- function(gross, param) {
+  national_insurance_basic(gross, param) + national_insurance_higher(gross, param)
 }
 
 
-allowance_withdrawl <- function(gross) {
- withdrawn_allowance <- max(0, min(personal_allowance, (gross - personal_allowance_withdrawl_limit) / personal_allowance_withdrawl_unit))
- remaining_allowance <- personal_allowance - withdrawn_allowance
- tax_function(gross, remaining_allowance) - tax_function(gross, personal_allowance) 
+allowance_withdrawl <- function(gross, param) {
+ withdrawn_allowance <- max(0, min(param$personal_allowance, (gross - param$personal_allowance_withdrawl_limit) / param$personal_allowance_withdrawl_unit))
+ remaining_allowance <- param$personal_allowance - withdrawn_allowance
+ tax_function(gross, remaining_allowance, param) - tax_function(gross, param$personal_allowance, param) 
 }
 
-student_loan <- function(gross) {
-  max(0, (gross - student_loan_threshold) * student_loan_rate)
+student_loan <- function(gross, param) {
+  max(0, (gross - param$student_loan_threshold) * param$student_loan_rate)
 }
 
-fr <- function(incomes) {
+fr <- function(incomes, param) {
   x <- data.frame(incomes,
-                        sapply(incomes, basic_tax_pa),
-                        sapply(incomes, higher_tax_pa),
-                        sapply(incomes, additional_tax_pa),
-                        sapply(incomes, allowance_withdrawl),
-                        sapply(incomes, national_insurance),
-                        sapply(incomes, student_loan)
+                        sapply(incomes, function(i) basic_tax_pa(i,param)),
+                        sapply(incomes, function(i) higher_tax_pa(i,param)),
+                        sapply(incomes, function(i) additional_tax_pa(i,param)),
+                        sapply(incomes, function(i) allowance_withdrawl(i,param)),
+                        sapply(incomes, function(i) national_insurance(i,param)),
+                        sapply(incomes, function(i) student_loan(i,param))
                        )
   colnames(x) <- c('income', "Basic","Higher","Additional","Allowance withdrawal", "National Insurance", "Student loan")
   x
 }
 
-tax_frame <- fr(gross_incomes)
-few_tax_frame <- fr(few_incomes)
+
+
+income_range<- function(param) {
+ seq(1,param$maxincome, by=50)
+}
+
+tax_frame_fn <- function(param) {
+  fr(income_range(param), param)
+}
+marginal_tax_matrix_normalised <- function(param) {
+
+  tax_frame <- tax_frame_fn(param)
+
+  tax_matrix <- as.matrix(tax_frame)
+
+  marginal_tax_matrix <- tax_matrix[-1,] - tax_matrix[-(dim(tax_matrix)[1]),]
+
+  m <- marginal_tax_matrix / marginal_tax_matrix[,1]
+
+  # put the original incomes back in:
+
+  m[,1] <- tax_matrix[-1,1]
+  m
+}
+
+marginal_graph <- function(input) {
+  param <- realparam
+  param$maxincome <- input$maxincome
+  param$personal_allowance <- input$personal_allowance
+  param$basic_rate <- input$basic_rate
+  param$higher_rate <- input$higher_rate
+  param$higher_rate_threshold <- input$higher_rate_threshold
+  param$additional_rate <- input$additional_rate
+  param$additional_rate_threshold <- input$additional_rate_threshold
+  param$personal_allowance_withdrawl_unit <- input$personal_allowance_withdrawl_unit
+  param$personal_allowance_withdrawl_limit <- input$personal_allowance_withdrawl_limit
+  param$primary_threshold <- input$primary_threshold
+  param$primary_rate <- input$primary_rate
+  param$upper_earnings_limit <- input$upper_earnings_limit
+  param$upper_rate <- input$upper_rate
+  param$student_loan_threshold <- input$student_loan_threshold
+  param$student_loan_rate <- input$student_loan_rate
+  # TODO ^ factor out
+
+  ggplot(melt(as.data.frame(marginal_tax_matrix_normalised(param)), id.vars='income'), aes(x=income, y=value, fill=variable)) + geom_area() + scale_y_continuous(labels = scales::percent) + ylab("Marginal tax rate")  + scale_fill_manual(values=c("#FF0000","#FF5555","#FFAAAA", "#AA0000", "#44AA44", "#4444AA"))
+  }
 
 # produces a stacked plot of how each much tax comes from each
 # component in total
-ggplot(melt(tax_frame, id.vars='income'),
+total_graph <- function(input) {
+  param <- realparam
+  param$maxincome <- input$maxincome
+  param$personal_allowance <- input$personal_allowance
+  param$basic_rate <- input$basic_rate
+  param$higher_rate <- input$higher_rate
+  param$higher_rate_threshold <- input$higher_rate_threshold
+  param$additional_rate <- input$additional_rate
+  param$additional_rate_threshold <- input$additional_rate_threshold
+  param$personal_allowance_withdrawl_unit <- input$personal_allowance_withdrawl_unit
+  param$personal_allowance_withdrawl_limit <- input$personal_allowance_withdrawl_limit
+  param$primary_threshold <- input$primary_threshold
+  param$primary_rate <- input$primary_rate
+  param$upper_earnings_limit <- input$upper_earnings_limit
+  param$upper_rate <- input$upper_rate
+  param$student_loan_threshold <- input$student_loan_threshold
+  param$student_loan_rate <- input$student_loan_rate
+
+  ggplot(melt(tax_frame_fn(param), id.vars='income'),
        aes(x=income, y=value, fill=variable)) + geom_area()
+}
 
-# i would like each row to be replaced with the difference
-# with the previous row, in tax_frame (except column 1, incomes)
-# and then normalised by the difference in column 1.
+overall_graph <- function(input) {
+  param <- realparam
+  param$maxincome <- input$maxincome
+  param$personal_allowance <- input$personal_allowance
+  param$basic_rate <- input$basic_rate
+  param$higher_rate <- input$higher_rate
+  param$higher_rate_threshold <- input$higher_rate_threshold
+  param$additional_rate <- input$additional_rate
+  param$additional_rate_threshold <- input$additional_rate_threshold
+  param$personal_allowance_withdrawl_unit <- input$personal_allowance_withdrawl_unit
+  param$personal_allowance_withdrawl_limit <- input$personal_allowance_withdrawl_limit
+  param$primary_threshold <- input$primary_threshold
+  param$primary_rate <- input$primary_rate
+  param$upper_earnings_limit <- input$upper_earnings_limit
+  param$upper_rate <- input$upper_rate
+  param$student_loan_threshold <- input$student_loan_threshold
+  param$student_loan_rate <- input$student_loan_rate
 
-tax_matrix <- as.matrix(tax_frame)
-marginal_tax_matrix <- tax_matrix[-1,] - tax_matrix[-(dim(tax_matrix)[1]),]
+  tax_frame <- tax_frame_fn(param)
 
-marginal_tax_matrix_normalised <- marginal_tax_matrix / marginal_tax_matrix[,1]
+  total_tax <- rowSums(tax_frame[-1])
+  total_tax_fraction_of_income <- data.frame(tax_frame[1], total_tax / tax_frame[1])
 
-# put the original incomes back in:
-
-marginal_tax_matrix_normalised[,1] <- tax_matrix[-1,1]
-
-ggplot(melt(as.data.frame(marginal_tax_matrix_normalised), id.vars='income'), aes(x=income, y=value, fill=variable)) + geom_area() + scale_y_continuous(labels = scales::percent) + ylab("Marginal tax rate")  + scale_fill_manual(values=c("#FF0000","#FF5555","#FFAAAA", "#AA0000", "#44AA44", "#4444AA"))
+  ggplot(melt(total_tax_fraction_of_income, id.vars='income'), aes(x=income, y=value)) + geom_area() + scale_y_continuous(labels = scales::percent) + ylab("Total tax as percentage of income")
+}
 
 
-total_tax <- rowSums(tax_frame[-1])
-total_tax_fraction_of_income <- data.frame(tax_frame[1], total_tax / tax_frame[1])
-
-ggplot(melt(total_tax_fraction_of_income, id.vars='income'), aes(x=income, y=value)) + geom_area() + scale_y_continuous(labels = scales::percent) + ylab("Percentage of income taken as tax")
 
