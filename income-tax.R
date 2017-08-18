@@ -67,6 +67,16 @@ upper_earnings_limit <- 3750
 # you pay:
 upper_rate <- 0.02
 
+
+# STUDENT LOAN #
+
+# if your income is above (per annum)
+student_loan_threshold = 21000
+
+# then you will repay this much of your
+# income over that:
+student_loan_rate = 0.09
+
 # End of government parameters #
 
 basic_tax <- function(adj) { 
@@ -124,6 +134,9 @@ allowance_withdrawl <- function(gross) {
  tax_function(gross, remaining_allowance) - tax_function(gross, personal_allowance) 
 }
 
+student_loan <- function(gross) {
+  max(0, (gross - student_loan_threshold) * student_loan_rate)
+}
 
 fr <- function(incomes) {
   x <- data.frame(incomes,
@@ -131,9 +144,10 @@ fr <- function(incomes) {
                         sapply(incomes, higher_tax_pa),
                         sapply(incomes, additional_tax_pa),
                         sapply(incomes, national_insurance),
-                        sapply(incomes, allowance_withdrawl)
+                        sapply(incomes, allowance_withdrawl),
+                        sapply(incomes, student_loan)
                        )
-  colnames(x) <- c('income', "Basic","Higher","Additional","NI","Allowance withdrawal")
+  colnames(x) <- c('income', "Basic","Higher","Additional","NI","Allowance withdrawal", "Student loan")
   x
 }
 
