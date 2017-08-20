@@ -3,16 +3,6 @@
 library(ggplot2)
 library(reshape2)
 
-# this should be an array of gross incomes over which we
-# want to plot our data
-
-# few_incomes is a replacement for gross_incomes which can be
-# used for quick experimentations - graphs plot much faster with
-# this much smaller dataset.
-few_incomes <- c(100,10000, 15000, 15100, 44999,45001, 46000, 60000, 149000, 152000, 200000)
-
-gross_incomes <- seq(1,200000, by=50)
-
 # parameters defined by government:
 
 realparam = list()
