@@ -186,7 +186,8 @@ marginal_graph <- function(input) {
   param$student_loan_rate <- input$student_loan_rate
   # TODO ^ factor out
 
-  ggplot(melt(as.data.frame(marginal_tax_matrix_normalised(param)), id.vars='income'), aes(x=income, y=value, fill=variable)) + geom_area() + scale_y_continuous(labels = scales::percent) + ylab("Marginal tax rate")  + scale_fill_manual(values=c("#FF0000","#FF5555","#FFAAAA", "#AA0000", "#44AA44", "#4444AA"))
+  ggplot(melt(as.data.frame(marginal_tax_matrix_normalised(param)), id.vars='income'), aes(x=income, y=value, fill=variable)) + geom_area() + scale_y_continuous(labels = scales::percent) + xlab("Gross income, GBP/year") + ylab("Marginal tax rate")  + scale_fill_manual(values=c("#FF0000","#FF5555","#FFAAAA", "#AA0000", "#44AA44", "#4444AA")) + labs(fill = "Component")
+
   }
 
 # produces a stacked plot of how each much tax comes from each
@@ -210,7 +211,7 @@ total_graph <- function(input) {
   param$student_loan_rate <- input$student_loan_rate
 
   ggplot(melt(tax_frame_fn(param), id.vars='income'),
-       aes(x=income, y=value, fill=variable)) + geom_area()
+       aes(x=income, y=value, fill=variable)) + geom_area() + ylab("Total tax paid, GBP/year") + xlab("Gross income, GBP/year") + labs(fill = "Component")
 }
 
 overall_graph <- function(input) {
@@ -236,7 +237,7 @@ overall_graph <- function(input) {
   total_tax <- rowSums(tax_frame[-1])
   total_tax_fraction_of_income <- data.frame(tax_frame[1], total_tax / tax_frame[1])
 
-  ggplot(melt(total_tax_fraction_of_income, id.vars='income'), aes(x=income, y=value)) + geom_area() + scale_y_continuous(labels = scales::percent) + ylab("Total tax as percentage of income")
+  ggplot(melt(total_tax_fraction_of_income, id.vars='income'), aes(x=income, y=value)) + geom_area() + scale_y_continuous(labels = scales::percent) + ylab("Total tax as percentage of income") + xlab("Gross income, GBP/year")
 }
 
 
