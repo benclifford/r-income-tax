@@ -167,24 +167,29 @@ marginal_tax_matrix_normalised <- function(param) {
   m
 }
 
-marginal_graph <- function(input) {
+input_param <- function(input) {
   param <- realparam
   param$maxincome <- input$maxincome
   param$personal_allowance <- input$personal_allowance
-  param$basic_rate <- input$basic_rate
-  param$higher_rate <- input$higher_rate
+  param$basic_rate <- input$basic_rate_percent / 100
+  param$higher_rate <- input$higher_rate_percent / 100
   param$higher_rate_threshold <- input$higher_rate_threshold
-  param$additional_rate <- input$additional_rate
+  param$additional_rate <- input$additional_rate_percent / 100
   param$additional_rate_threshold <- input$additional_rate_threshold
   param$personal_allowance_withdrawl_unit <- input$personal_allowance_withdrawl_unit
   param$personal_allowance_withdrawl_limit <- input$personal_allowance_withdrawl_limit
   param$primary_threshold <- input$primary_threshold
-  param$primary_rate <- input$primary_rate
+  param$primary_rate <- input$primary_rate_percent / 100
   param$upper_earnings_limit <- input$upper_earnings_limit
-  param$upper_rate <- input$upper_rate
+  param$upper_rate <- input$upper_rate_percent / 100
   param$student_loan_threshold <- input$student_loan_threshold
-  param$student_loan_rate <- input$student_loan_rate
-  # TODO ^ factor out
+  param$student_loan_rate <- input$student_loan_rate_percent / 100
+ 
+  param
+}
+
+marginal_graph <- function(input) {
+  param <- input_param(input)
 
   ggplot(melt(as.data.frame(marginal_tax_matrix_normalised(param)), id.vars='income'), aes(x=income, y=value, fill=variable)) + geom_area() + scale_y_continuous(labels = scales::percent) + xlab("Gross income, GBP/year") + ylab("Marginal tax rate")  + scale_fill_manual(values=c("#FF0000","#FF5555","#FFAAAA", "#AA0000", "#44AA44", "#4444AA")) + labs(fill = "Component")
 
@@ -193,44 +198,14 @@ marginal_graph <- function(input) {
 # produces a stacked plot of how each much tax comes from each
 # component in total
 total_graph <- function(input) {
-  param <- realparam
-  param$maxincome <- input$maxincome
-  param$personal_allowance <- input$personal_allowance
-  param$basic_rate <- input$basic_rate
-  param$higher_rate <- input$higher_rate
-  param$higher_rate_threshold <- input$higher_rate_threshold
-  param$additional_rate <- input$additional_rate
-  param$additional_rate_threshold <- input$additional_rate_threshold
-  param$personal_allowance_withdrawl_unit <- input$personal_allowance_withdrawl_unit
-  param$personal_allowance_withdrawl_limit <- input$personal_allowance_withdrawl_limit
-  param$primary_threshold <- input$primary_threshold
-  param$primary_rate <- input$primary_rate
-  param$upper_earnings_limit <- input$upper_earnings_limit
-  param$upper_rate <- input$upper_rate
-  param$student_loan_threshold <- input$student_loan_threshold
-  param$student_loan_rate <- input$student_loan_rate
+  param <- input_param(input)
 
   ggplot(melt(tax_frame_fn(param), id.vars='income'),
        aes(x=income, y=value, fill=variable)) + geom_area() + ylab("Total tax paid, GBP/year") + xlab("Gross income, GBP/year") + labs(fill = "Component")
 }
 
 overall_graph <- function(input) {
-  param <- realparam
-  param$maxincome <- input$maxincome
-  param$personal_allowance <- input$personal_allowance
-  param$basic_rate <- input$basic_rate
-  param$higher_rate <- input$higher_rate
-  param$higher_rate_threshold <- input$higher_rate_threshold
-  param$additional_rate <- input$additional_rate
-  param$additional_rate_threshold <- input$additional_rate_threshold
-  param$personal_allowance_withdrawl_unit <- input$personal_allowance_withdrawl_unit
-  param$personal_allowance_withdrawl_limit <- input$personal_allowance_withdrawl_limit
-  param$primary_threshold <- input$primary_threshold
-  param$primary_rate <- input$primary_rate
-  param$upper_earnings_limit <- input$upper_earnings_limit
-  param$upper_rate <- input$upper_rate
-  param$student_loan_threshold <- input$student_loan_threshold
-  param$student_loan_rate <- input$student_loan_rate
+  param <- input_param(input)
 
   tax_frame <- tax_frame_fn(param)
 
@@ -239,6 +214,4 @@ overall_graph <- function(input) {
 
   ggplot(melt(total_tax_fraction_of_income, id.vars='income'), aes(x=income, y=value)) + geom_area() + scale_y_continuous(labels = scales::percent) + ylab("Total tax as percentage of income") + xlab("Gross income, GBP/year")
 }
-
-
 
