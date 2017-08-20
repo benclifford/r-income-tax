@@ -4,15 +4,9 @@ source("income-tax.R")
 
 server <- function(input, output) {
 
-  output$myPlot <- renderPlot(
-    if(input$graphtype == "marginal") {
-      marginal_graph(input)
-    } else if(input$graphtype == "total"){
-      total_graph(input)
-    } else {
-      overall_graph(input)
-    }
-   )
+  output$marginalPlot <- renderPlot(marginal_graph(input))
+  output$totalPlot <- renderPlot(total_graph(input))
+  output$overallPlot <- renderPlot(overall_graph(input))
 
 }
 
@@ -23,8 +17,6 @@ ui <- fluidPage(
 
 # GUI controls
       sliderInput("maxincome", "Maximum income on graph/£:", min = 0, max = 1000000, value = 200000),
-      selectInput("graphtype", "Graph type:", c("Marginal rate" = "marginal", "Total paid" = "total", "Overall rate" = "overall")),
-
 
 # Income tax
       sliderInput("personal_allowance", "Personal allowance/£:", min = 0, max = 100000, value = realparam$personal_allowance),
@@ -54,7 +46,13 @@ ui <- fluidPage(
     p(a("Source/issue tracker", href="https://github.com/benclifford/r-income-tax"))
 
     ),
-    mainPanel(plotOutput("myPlot"))
+    mainPanel(
+      tabsetPanel(
+        tabPanel("Marginal rate", plotOutput("marginalPlot")),
+        tabPanel("Total", plotOutput("totalPlot")),
+        tabPanel("Overall rate", plotOutput("overallPlot"))
+      )
+    )
   )
 )
 
