@@ -144,9 +144,8 @@ fr <- function(incomes, param) {
 }
 
 
-
 income_range<- function(param) {
- seq(1,param$maxincome, by=50)
+ seq(1,param$maxincome, length.out=500)
 }
 
 tax_frame_fn <- function(param) {
